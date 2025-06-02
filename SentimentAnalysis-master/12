@@ -1,0 +1,208 @@
+ # authenticating
+        #client = tweepy.Client(bearer_token='AAAAAAAAAAAAAAAAAAAAAPuh0AEAAAAACdgqnaQnkxXHmNtbGCGQ%2B0FlgF0%3D97jTVb0riUOHJ08gInsvcy25FiNKjAT4V87q5T1PW4MwyLZH5i')
+        #consumerKey = 'SXWxtPMCdfoiHhlPkIyVoRYk3'
+        #consumerSecret = 'vYa06LvooIBX7N6kWDUOJZfeWUY6krl5r6V9ZEqXTIktZdnW6L'
+        #accessToken = '1904407187012702208-BNVenVH6ebiwh0JDA8NOUTS5ZNlBIW'
+        #accessTokenSecret = 'psrI2xwOThywSHRoMgAMP9sT4RxpZQQOPjcTGKIdgu18o'
+        #auth = tweepy.OAuthHandler(consumerKey, consumerSecret)
+        #auth.set_access_token(accessToken, accessTokenSecret)
+        #api = tweepy.API(auth, wait_on_rate_limit=True)
+"""from flask import Blueprint, render_template, request
+import matplotlib.pyplot as plt
+import os
+import tweepy
+import csv
+import re
+from textblob import TextBlob
+import matplotlib
+matplotlib.use('agg')
+import numpy as np
+# Register this file as a blueprint
+second = Blueprint("second", __name__, static_folder="static", template_folder="template")
+
+# Render page when URL is called
+@second.route("/sentiment_analyzer")
+def sentiment_analyzer():
+    return render_template("sentiment_analyzer.html")
+
+# Class with main logic
+class SentimentAnalysis:
+
+    def __init__(self):
+        self.tweets = []
+        self.tweetText = []
+
+    # This function connects to the Tweepy API and downloads tweet data
+    def DownloadData(self, keyword, tweets):
+        client = tweepy.Client(bearer_token='AAAAAAAAAAAAAAAAAAAAAPuh0AEAAAAATSXxPBUcNHfV%2B32ei9L0y5yyRMA%3D5dJK3U5uRwOibwfQJJOcIrN3ZdyrSDw8PbcDPUWmod9gbUJtdf')
+        # Authenticating
+        #consumerKey = 'SXWxtPMCdfoiHhlPkIyVoRYk3'
+        #consumerSecret = 'vYa06LvooIBX7N6kWDUOJZfeWUY6krl5r6V9ZEqXTIktZdnW6L'
+        #accessToken = '1904407187012702208-BNVenVH6ebiwh0JDA8NOUTS5ZNlBIW'
+        #accessTokenSecret = 'psrI2xwOThywSHRoMgAMP9sT4RxpZQQOPjcTGKIdgu18o'
+        #auth = tweepy.OAuth1UserHandler(consumerKey, consumerSecret)
+        #auth.set_access_token(accessToken, accessTokenSecret)
+        #api = tweepy.API(auth, wait_on_rate_limit=True)"
+        
+
+        # Convert tweets to integer
+        tweets = int(tweets)
+
+        # Searching for tweets (Updated to use api.search_tweets)
+        #self.tweets = tweepy.Cursor(api.search_tweets, q=keyword, lang="en").items(tweets)
+        #self.tweets = api.home_timeline(count=5)
+        self.tweets = client.search_recent_tweets(
+            query=keyword, 
+    #tweet_fields=["created_at", "author_id", "text"], 
+            max_results=tweets,
+            tweet_fields=["text"]
+    #limit=1
+    #wait_on_rate_limit=True
+                                                    )
+        if not self.tweets:
+            print("Error: No tweets retrieved. Please check the keyword and API limits.")
+            return 0, "No Data", 0, 0, 0, 0, 0, 0, 0, keyword, tweets
+
+
+
+        # Open/create a file to append data to
+        csvFile = open('result.csv', 'a')
+
+        # Use csv writer
+        csvWriter = csv.writer(csvFile)
+
+        # Creating variables to store sentiment info
+        polarity = 0
+        positive = 0
+        wpositive = 0
+        spositive = 0
+        negative = 0
+        wnegative = 0
+        snegative = 0
+        neutral = 0
+
+        # Iterating through tweets fetched
+        for tweet in self.tweets:
+            if hasattr(tweet, 'text'):
+            # Append cleaned tweet text to list
+            #self.tweetText.append(self.cleanTweet(tweet.text).encode('utf-8'))
+            #self.tweets = api.user_timeline(screen_name="elonmusk", count=10, tweet_mode="extended")
+                self.tweetText.append(self.cleanTweet(tweet.text).encode('utf-8'))
+
+                analysis = TextBlob(tweet.text)
+                polarity += analysis.sentiment.polarity
+
+            # Categorize sentiment
+                if analysis.sentiment.polarity == 0:
+                    neutral += 1
+                elif 0 < analysis.sentiment.polarity <= 0.3:
+                    wpositive += 1
+                elif 0.3 < analysis.sentiment.polarity <= 0.6:
+                    positive += 1
+                elif 0.6 < analysis.sentiment.polarity <= 1:
+                    spositive += 1
+                elif -0.3 < analysis.sentiment.polarity <= 0:
+                    wnegative += 1
+                elif -0.6 < analysis.sentiment.polarity <= -0.3:
+                    negative += 1
+                elif -1 < analysis.sentiment.polarity <= -0.6:
+                    snegative += 1
+
+        # Write to csv and close file
+        csvWriter.writerow(self.tweetText)
+        csvFile.close()
+
+        # Calculate percentages
+        positive = self.percentage(positive, tweets)
+        wpositive = self.percentage(wpositive, tweets)
+        spositive = self.percentage(spositive, tweets)
+        negative = self.percentage(negative, tweets)
+        wnegative = self.percentage(wnegative, tweets)
+        snegative = self.percentage(snegative, tweets)
+        neutral = self.percentage(neutral, tweets)
+
+        # Calculate average polarity
+        polarity = polarity / tweets
+
+        # Determine overall sentiment for HTML display
+        if polarity == 0:
+            htmlpolarity = "Neutral"
+        elif 0 < polarity <= 0.3:
+            htmlpolarity = "Weakly Positive"
+        elif 0.3 < polarity <= 0.6:
+            htmlpolarity = "Positive"
+        elif 0.6 < polarity <= 1:
+            htmlpolarity = "Strongly Positive"
+        elif -0.3 < polarity <= 0:
+            htmlpolarity = "Weakly Negative"
+        elif -0.6 < polarity <= -0.3:
+            htmlpolarity = "Negative"
+        elif -1 < polarity <= -0.6:
+            htmlpolarity = "Strongly Negative"
+
+        # Generate pie chart
+        self.plotPieChart(positive, wpositive, spositive, negative,
+                        wnegative, snegative, neutral, keyword, tweets)
+        print(polarity, htmlpolarity)
+        return polarity, htmlpolarity, positive, wpositive, spositive, negative, wnegative, snegative, neutral, keyword, tweets
+
+    def cleanTweet(self, tweet):
+        # Remove links, special characters, etc. from tweet
+        return ' '.join(re.sub("(@[A-Za-z0-9]+)|([^0-9A-Za-z \t])|(\w+:\/\/\S+)", " ", tweet).split())
+
+    # Function to calculate percentage
+    def percentage(self, part, whole):
+        if whole == 0:
+                return 0 
+        temp = 100 * float(part) / float(whole)
+        return format(temp, '.2f')
+
+    # Function to plot and save pie chart
+    def plotPieChart(self, positive, wpositive, spositive, negative, wnegative, snegative, neutral, keyword, tweets):
+        fig = plt.figure()
+        labels = ['Positive [' + str(positive) + '%]', 'Weakly Positive [' + str(wpositive) + '%]',
+                'Strongly Positive [' + str(spositive) + '%]', 'Neutral [' + str(neutral) + '%]',
+                'Negative [' + str(negative) + '%]', 'Weakly Negative [' + str(wnegative) + '%]',
+                'Strongly Negative [' + str(snegative) + '%]']
+        sizes = [positive, wpositive, spositive, neutral, negative, wnegative, snegative]
+        # Convert to NumPy array for easier processing
+        sizes = np.array(sizes, dtype=np.float64)
+    
+    # Replace NaN with 0
+        sizes = np.nan_to_num(sizes, nan=0)
+        sizes = [0 if (x is None or isinstance(x, str) or not isinstance(x, (int, float)) or np.isnan(x)) else x for x in sizes]
+        if sum(sizes) == 0:
+                print("Error: Pie chart cannot be generated because all sentiment values are zero or NaN.")
+                return
+
+        colors = ['yellowgreen', 'lightgreen', 'darkgreen', 'gold', 'red', 'lightsalmon', 'darkred']
+        #patches, texts = plt.pie(sizes, colors=colors, startangle=90)
+        patches, texts = plt.pie(sizes, colors=colors, startangle=90, autopct='%1.1f%%')
+
+        plt.legend(patches, labels, loc="best")
+        plt.axis('equal')
+        plt.tight_layout()
+        strFile = r"C:\Users\LENOVO\PycharmProjects\SentimentAnalysis\static\images\plot1.png"
+        if os.path.isfile(strFile):
+            os.remove(strFile)
+        plt.savefig(strFile)
+        plt.close()  # Close figure to free memory
+
+@second.route('/sentiment_logic', methods=['POST', 'GET'])
+def sentiment_logic():
+    # Get user input from HTML form
+    keyword = request.form.get('keyword')
+    tweets = request.form.get('tweets')
+    sa = SentimentAnalysis()
+    
+    # Set variables for Jinja template
+    polarity, htmlpolarity, positive, wpositive, spositive, negative, wnegative, snegative, neutral, keyword1, tweet1 = sa.DownloadData(
+        keyword, tweets)
+    return render_template('sentiment_analyzer.html', polarity=polarity, htmlpolarity=htmlpolarity, positive=positive, 
+                          wpositive=wpositive, spositive=spositive, negative=negative, wnegative=wnegative, 
+                          snegative=snegative, neutral=neutral, keyword=keyword1, tweets=tweet1)
+
+@second.route('/visualize')
+def visualize():
+    return render_template('PieChart.html')
+"""
