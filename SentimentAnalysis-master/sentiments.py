@@ -26,7 +26,7 @@ class SentimentAnalysis:
         self.tweetText = []
 
     def DownloadData(self, keyword, tweets):
-        client = tweepy.Client(bearer_token='AAAAAAAAAAAAAAAAAAAAAPdF0wEAAAAAD8yQhVmsufT1GSPD3KcnNQKGhTE%3DwIbehdIby3FC0A3DSInkus0ThoezzdHltq6NaVuSX3bgkgly95')
+        client = tweepy.Client(bearer_token='msufT1GSPD3KcnNQKGhTE%3DwIbehdIby3FC0A3DSInkus0ThoezzdHltq6NaVuSX3bgkgly95')
         tweets = int(tweets)
         
         # Fetch tweets
